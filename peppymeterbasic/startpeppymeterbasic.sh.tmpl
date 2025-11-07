@@ -1,5 +1,8 @@
 #!/bin/sh
+# Start script template; executed by peppymeterbasic.service
+# ${delaymeter} is injected by the plugin when saving settings.
+set -e
 export DISPLAY=:0
 sleep ${delaymeter}
-cd /data/plugins/user_interface/peppymeterbasic/BasicPeppyMeter && python3 peppymeter.py
-
+cd /data/plugins/user_interface/peppymeterbasic/BasicPeppyMeter
+exec /usr/bin/python3 peppymeter.py
