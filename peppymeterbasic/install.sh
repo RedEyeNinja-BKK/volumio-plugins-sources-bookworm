@@ -21,7 +21,7 @@ sudo apt-get -y --no-install-recommends install \
 pip3 install --no-input Pillow
 
 echo "Cloning PeppyMeter..."
-git clone https://github.com/project-owner/PeppyMeter "${peppymeterpath}" || true
+git clone --depth 1 https://github.com/project-owner/PeppyMeter "${peppymeterpath}" || true
 chmod 777 -R "${peppymeterpath}"
 sudo chown -R volumio "${spath}" "${customfolder}"
 sudo chgrp -R volumio "${spath}" "${customfolder}"
