@@ -35,6 +35,7 @@ Feeding Peppy directly from Camilla (via a FIFO “monitor” branch) keeps Pepp
 ## Install
 This plugin is built via the standard Volumio Bookworm plugin workflow and can be installed from a zip created from the `peppymeterbasic/` folder.
 
+volumio plugin install /home/volumio/peppymeterbasic.zip
 
 ## Uninstall
 Disable the plugin from the UI, then remove it from the Plugins page.  
