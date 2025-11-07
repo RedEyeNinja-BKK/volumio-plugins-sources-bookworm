@@ -1,12 +1,19 @@
 {
-"meter":{"type":"string","value":"Random"},
-"screensize":{"type":"string","value":"320x240"},
-"screenwidth":{"type":"string","value":""},
-"screenheight":{"type":"string","value":""},
-"metersize":{"type":"number","value":30},
-"debuglog":{"type":"boolean","value":false},
-"showsize":{"type":"boolean","value":false},
-"autosize":{"type":"boolean","value":true},
-"zipfile":{"type":"string","value":"Choose a packet"},
-"delaymeter":{"type":"string","value":"0"}
+  "meter": { "type": "string", "value": "Random" },
+  "screensize": { "type": "string", "value": "320x240" },
+  "screenwidth": { "type": "string", "value": "" },
+  "screenheight": { "type": "string", "value": "" },
+  "metersize": { "type": "number", "value": 30 },
+  "debuglog": { "type": "boolean", "value": false },
+  "showsize": { "type": "boolean", "value": false },
+  "autosize": { "type": "boolean", "value": true },
+  "zipfile": { "type": "string", "value": "Choose a packet" },
+  "delaymeter": { "type": "string", "value": "0" },
+
+  /* NEW – backend selection */
+  "backend": { "type": "string", "value": "loopback" },
+  "camillaFifoPath": { "type": "string", "value": "/tmp/basic_peppy_meter_fifo" },
+  "camillaRate": { "type": "number", "value": 176400 },
+  "camillaChannels": { "type": "number", "value": 2 },
+  "camillaFormat": { "type": "string", "value": "S16_LE" }
 }
