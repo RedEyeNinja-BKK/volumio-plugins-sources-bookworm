@@ -5,7 +5,7 @@
   "main": "index.js",
   "author": "Balbuze, community contributors",
   "license": "GPL-3.0",
-  "volumio_info": {
+  "volumio_info": {"plugin_type": "user_interface", "os": ["bookworm"],
     "prettyName": "PeppyMeter Basic",
     "plugin_type": "user_interface",
     "icon": "fa-bar-chart",
