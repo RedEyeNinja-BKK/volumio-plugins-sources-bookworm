@@ -31,15 +31,12 @@ fi
 chmod 777 -R "${peppymeterpath}" || true
 sudo chown -R volumio:volumio "${spath}" "${customfolder}"
 
-# Detect architecture (portable)
-ARCH="$(uname -m)"
-if [[ -z "${ARCH}" ]]; then
-  echo "Warning: could not detect architecture; continuing with generic setup"
-fi
-echo "Detected architecture: ${ARCH}"
+# Detect architecture
+ARCH="$(uname -m || true)"
+echo "Detected architecture: ${ARCH:-unknown}"
 
 # Write service (least privilege everywhere)
-cat > /etc/systemd/system/peppymeterbasic.service <<'EOC'
+sudo tee /etc/systemd/system/peppymeterbasic.service >/dev/null <<'EOC'
 [Unit]
 Description=peppymeterbasic Daemon
 After=syslog.target
@@ -68,18 +65,27 @@ esac
 
 sudo systemctl daemon-reload
 
-# Create peppyalsa soname symlinks if the source exists
-if [[ -n "${PEPPY_ALSA_PATH}" ]] && [[ -f "${PEPPY_ALSA_PATH}/libpeppyalsa.so.0.0.0" ]]; then
-  mkdir -p "${ALSA_BASE_PATH}"
-  ln -sfn "${PEPPY_ALSA_PATH}/libpeppyalsa.so.0.0.0" "${ALSA_BASE_PATH}/libpeppyalsa.so"
-  ln -sfn "${PEPPY_ALSA_PATH}/libpeppyalsa.so.0.0.0" "${ALSA_BASE_PATH}/libpeppyalsa.so.0"
-  echo "Linked ${PEPPY_ALSA_PATH}/libpeppyalsa.so.0.0.0 -> ${ALSA_BASE_PATH}/libpeppyalsa.so{,.0}"
-else
-  echo "Note: peppyalsa library for '${ARCH}' not found; continuing without symlinks."
+# Create peppyalsa soname symlinks if the source exists (.so.0.0.0 preferred, fallback to .so)
+if [[ -n "${PEPPY_ALSA_PATH}" ]]; then
+  SRC_LIB=""
+  if [[ -f "${PEPPY_ALSA_PATH}/libpeppyalsa.so.0.0.0" ]]; then
+    SRC_LIB="${PEPPY_ALSA_PATH}/libpeppyalsa.so.0.0.0"
+  elif [[ -f "${PEPPY_ALSA_PATH}/libpeppyalsa.so" ]]; then
+    SRC_LIB="${PEPPY_ALSA_PATH}/libpeppyalsa.so"
+  fi
+
+  if [[ -n "${SRC_LIB}" ]]; then
+    mkdir -p "${ALSA_BASE_PATH}"
+    ln -sfn "${SRC_LIB}" "${ALSA_BASE_PATH}/libpeppyalsa.so"
+    ln -sfn "${SRC_LIB}" "${ALSA_BASE_PATH}/libpeppyalsa.so.0"
+    echo "Linked ${SRC_LIB} -> ${ALSA_BASE_PATH}/libpeppyalsa.so{,.0}"
+  else
+    echo "Note: peppyalsa library not found for '${ARCH}' in '${PEPPY_ALSA_PATH}'."
+  fi
 fi
 
 # Ensure launcher is executable
-sudo chmod +x /data/plugins/user_interface/peppymeterbasic/startpeppymeterbasic.sh
+sudo chmod +x /data/plugins/user_interface/peppymeterbasic/startpeppymeterbasic.sh || true
 
 # Required by Volumio plugin installer
 echo "plugininstallend"
