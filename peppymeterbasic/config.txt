@@ -1,0 +1,21 @@
+# paths
+PLUGIN_DIR="/data/plugins/user_interface/peppymeterbasic"
+PM_DIR="$PLUGIN_DIR/BasicPeppyMeter"
+
+# safety
+sudo mkdir -p "$PM_DIR"
+sudo cp -an "$PM_DIR/config.txt" "$PM_DIR/config.txt.bak.$(date +%s)" 2>/dev/null || true
+
+# write a minimal root config.txt with a [current] selector
+sudo tee "$PM_DIR/config.txt" >/dev/null <<'EOF'
+[current]
+# Choose one of the bundled presets: 320x240, 480x320, 800x480, 1280x400
+config = 800x480/config.txt
+# If you prefer storing custom themes in Volumio’s data area, set base_folder to:
+# base_folder = /data/INTERNAL/PeppyMeterBasic/Templates
+
+# Optional runtime hints used by our launcher (not required by upstream):
+backend = loopback          ; loopback | fifo
+fifo_path = /tmp/basic_peppy_meter_fifo
+rotation = 0
+EOF
