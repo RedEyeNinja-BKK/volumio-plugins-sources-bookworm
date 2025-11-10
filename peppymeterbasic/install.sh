@@ -1,96 +1,124 @@
-#!/bin/bash
-# Install script for peppymeterbasic (Bookworm-safe, GitHub-agnostic)
-# Strategy:
-#   1) If BasicPeppyMeter is bundled in the plugin src, copy it (fastest, no network).
-#   2) Else try anonymous tarball downloads from known public URLs (no auth prompts).
-#   3) If still not available, finish install and log a clear hint for manual placement.
+#!/usr/bin/env bash
 set -euo pipefail
 
+# ---- Paths ----
 peppymeterpath="/data/plugins/user_interface/peppymeterbasic/BasicPeppyMeter"
 spath="/data/plugins/user_interface/peppymeterbasic"
-customfolder="/data/INTERNAL/PeppyMeterBasic/Templates"
+customfolder="/data/INTERNAL/PeppyMeterBasic"
 PLUGIN_PATH="$spath"
-ALSA_BASE_PATH="${PLUGIN_PATH}/alsa-lib"
+ALSA_BASE_PATH="$spath/alsa-lib"
 
-# Where we might have shipped PeppyMeter source inside the plugin package
-# (commit this folder to your repo to avoid network during install)
-BUNDLED_SRC_REL="BasicPeppyMeter_src"           # <- you can add this folder to your repo
-BUNDLED_SRC_ABS="${spath}/${BUNDLED_SRC_REL}"
+# A copy of upstream source optionally included in the plugin tree
+BUNDLED_SRC_REL="BasicPeppyMeter_src"
+BUNDLED_SRC_ABS="$spath/$BUNDLED_SRC_REL"
 
-# Anonymous tarball candidates (must be public repos; order = preference)
-# Adjust these if you fork PeppyMeter to your own public repo.
+# Zero-prompt upstream tarballs (public)
 TARBALL_CANDIDATES=(
-  "https://codeload.github.com/project-owner/peppy_meter/tar.gz/refs/heads/master"
   "https://codeload.github.com/project-owner/PeppyMeter/tar.gz/refs/heads/master"
+  "https://codeload.github.com/project-owner/peppy_meter/tar.gz/refs/heads/master"
 )
 
-log() { echo "[peppymeterbasic] $*"; }
+log(){ echo "[peppymeterbasic] $*"; }
 
-# -----------------------------------------------------------------------------
-# 0) Baseline folders / permissions
-# -----------------------------------------------------------------------------
-mkdir -p "${customfolder}"
-chmod 777 -R "${customfolder}" || true
-sudo mkdir -p "${spath}"
-sudo chown -R volumio:volumio "${spath}" "${customfolder}" || true
-
-# -----------------------------------------------------------------------------
-# 1) Dependencies (PEP 668-safe; no system pip)
-# -----------------------------------------------------------------------------
 log "Installing dependencies (Bookworm / PEP 668 compliant)..."
 sudo apt-get update
 sudo apt-get -y --no-install-recommends install \
-  python3-pygame python3-dev libjpeg-dev zlib1g-dev libfftw3-dev python3-pil ca-certificates curl tar
+  python3-pygame python3-dev libjpeg-dev zlib1g-dev libfftw3-dev python3-pil \
+  ca-certificates curl tar
 
-# -----------------------------------------------------------------------------
-# 2) Obtain PeppyMeter app
-#    Prefer bundled src (if present in the packaged plugin). Otherwise try tarballs.
-# -----------------------------------------------------------------------------
+sudo mkdir -p "$PLUGIN_PATH" "$customfolder/Templates"
+sudo chown -r volumio:volumio "$PLUGIN_PATH" "$customfolder" 2>/dev/null || true
+chmod 755 -R "$PLUGIN_PATH"
+chmod 777 -R "$customfolder/Templates"
+
 ensure_peppymeter() {
-  if [[ -d "${peppymeterpath}" && -n "$(ls -A "${peppymeterpath}" 2>/dev/null)" ]]; then
-    log "PeppyMeter already present at ${peppymeterpath}"
+  # If destination already exists, keep it (user may have edited templates there)
+  if [[ -d "$peppymeterpath" ]] ; then
+    log "PeppyMeter already present at $peppymeterpath"
     return 0
   fi
 
-  if [[ -d "${BUNDLED_SRC_ABS}" && -n "$(ls -A "${BUNDLED_SRC_ABS}" 2>/dev/null)" ]]; then
-    log "Using bundled PeppyMeter source from ${BUNDLED_SRC_ABS}"
-    mkdir -p "${peppymeterpath}"
-    cp -a "${BUNDLED_SRC_ABS}/." "${peppymeterpath}/"
-    return 0
-  fi
-
-  log "No bundled PeppyMeter found; trying anonymous tarball download..."
-  mkdir -p "${peppymeterpath}"
-  tmpdir="$(mktemp -d)"
+  # 1) Try anonymous tarball (no interactive auth)
+  tmpd="$(mktemp -d)"
+  trap 'rm -rf "$tmpd"' EXIT
   for url in "${TARBALL_CANDIDATES[@]}"; do
-    log "Downloading ${url}"
-    if curl -fL --connect-timeout 10 --retry 2 "$url" -o "${tmpdir}/peppymeter.tar.gz"; then
-      tar -xzf "${tmpdir}/peppymeter.tar.gz" -C "${tmpdir}"
-      # Extracted folder is <repo>-<hash>; copy its contents
-      srcdir="$(find "${tmpdir}" -maxdepth 1 -type d -name 'peppy_*' -o -name 'PeppyMeter-*' | head -n1 || true)"
-      if [[ -n "${srcdir}" && -d "${srcdir}" ]]; then
-        cp -a "${srcdir}/." "${peppymeterpath}/"
-        rm -rf "${tmpdir}"
-        log "PeppyMeter downloaded and placed at ${peppymeterpath}"
+    log "Fetching upstream PeppyMeter via tarball: $url"
+    if curl -fsSL "$url" -o "$tmpd/peppymeter.tar.gz"; then
+      mkdir -p "$tmpd/src"
+      tar -xzf "$tmpd/peppymeter.tar.gz" -C "$tmpd/src" --strip-components=1 || true
+      if [[ -f "$tmpd/src/peppymeter.py" ]]; then
+        mkdir -p "$peppymeterpath"
+        cp -a "$tmpd/src/." "$peppymeterpath/"
+        log "Installed upstream PeppyMeter into $peppymeterpath"
         return 0
       fi
     fi
   done
 
-  rm -rf "${tmpdir}" || true
-  log "WARNING: Unable to fetch PeppyMeter sources automatically."
-  log "         You can place the app manually into: ${peppymeterpath}"
-  return 0  # do not fail the whole plugin install; the service will log a hint at runtime
+  # 2) Fallback: bundled copy (kept in repo at BasicPeppyMeter_src)
+  if [[ -d "$BUNDLED_SRC_ABS" ]] && [[ -f "$BUNDLED_SRC_ABS/peppymeter.py" ]]; then
+    log "Using bundled PeppyMeter source from $BUNDLED_SRC_ABS"
+    mkdir -p "$peppymeterpath"
+    cp -a "$BUNDLED_SRC_ABS/." "$peppymeterpath/"
+    return 0
+  fi
+
+  log "ERROR: Unable to obtain PeppyMeter source (network blocked and no bundled copy)."
+  exit 1
 }
 
-ensure_peppymeter
-sudo chown -R volumio:volumio "${peppymeterpath}" || true
-chmod 755 -R "${peppymeterpath}" || true
+ensure_default_config() {
+  # Provide a persistent config PeppyMeter can read.
+  # PeppyMeter expects a config.txt with a [current] section among others.
+  local confdir="$customfolder"
+  local conf="$confdir/config.txt"
 
-# -----------------------------------------------------------------------------
-# 3) Systemd service (least privilege on all architectures)
-# -----------------------------------------------------------------------------
-sudo tee /etc/systemd/system/peppymeterbasic.service >/dev/null <<'EOC'
+  mkdir -p "$confdir" "$confdir/Templates"
+
+  if [[ ! -f "$conf" ]]; then
+    log "Writing default $conf"
+    cat > "$conf" <<'CFG'
+[current]
+base_folder = /data/plugins/user_interface/peppymeterbasic/BasicPeppyMeter
+
+[screen]
+# Use one of the folders present under BasicPeppyMeter/ (e.g. 1280x400, 800x480, 480x320, 320x240)
+width = 800
+height = 480
+rotation = 0
+fullscreen = True
+
+[meter]
+# meter_folder is relative to base_folder, e.g. "800x480"
+meter_folder = 800x480
+
+[alsa]
+# These are not used in Loopback mode, but kept for completeness
+device = peppyalsa
+format = S16_LE
+channels = 2
+rate = 44100
+
+[fifo]
+path = /tmp/basic_peppy_meter_fifo
+enabled = False
+CFG
+    chmod 664 "$conf"
+  fi
+
+  # Ensure Templates contains at least the meters from the source tree so users can pick/duplicate
+  if [[ -d "$peppymeterpath" ]]; then
+    # copy only known meter directories if they exist
+    for d in 1280x400 800x480 480x320 320x240; do
+      [[ -d "$peppymeterpath/$d" ]] && rsync -a --delete "$peppymeterpath/$d" "$confdir/Templates/" || true
+    done
+  fi
+}
+
+setup_systemd() {
+  local svc="/etc/systemd/system/peppymeterbasic.service"
+  log "Creating systemd unit: $svc"
+  sudo tee "$svc" >/dev/null <<'UNIT'
 [Unit]
 Description=peppymeterbasic Daemon
 After=syslog.target
@@ -99,7 +127,7 @@ After=syslog.target
 Type=simple
 WorkingDirectory=/data/plugins/user_interface/peppymeterbasic
 ExecStart=/data/plugins/user_interface/peppymeterbasic/startpeppymeterbasic.sh
-Restart=no
+Restart=on-failure
 SyslogIdentifier=volumio
 User=volumio
 Group=volumio
@@ -107,46 +135,42 @@ TimeoutSec=5
 
 [Install]
 WantedBy=multi-user.target
-EOC
-sudo systemctl daemon-reload
+UNIT
+  sudo systemctl daemon-reload
+}
 
-# -----------------------------------------------------------------------------
-# 4) Architecture-specific peppyalsa soname links (armhf/arm64/amd64)
-# -----------------------------------------------------------------------------
-ARCH="$(uname -m || true)"
-log "Detected architecture: ${ARCH:-unknown}"
+link_alsa_libs() {
+  # Make a neutral libpeppyalsa.so{,.0} in alsa-lib/ pointing at arch-specific builds if present.
+  local arch="$(uname -m)"
+  local src=""
+  case "$arch" in
+    x86_64)  PEPPY_ALSA_PATH="$ALSA_BASE_PATH/x86_64" ;;
+    aarch64) PEPPY_ALSA_PATH="$ALSA_BASE_PATH/arm64" ;;
+    armv7*|armv6*) PEPPY_ALSA_PATH="$ALSA_BASE_PATH/armhf" ;;
+    *) PEPPY_ALSA_PATH="$ALSA_BASE_PATH";;
+  esac
 
-case "${ARCH}" in
-  armv6l|armv7l) PEPPY_ALSA_PATH="${ALSA_BASE_PATH}/armhf" ;;
-  aarch64)       PEPPY_ALSA_PATH="${ALSA_BASE_PATH}/arm64" ;;
-  x86_64)        PEPPY_ALSA_PATH="${ALSA_BASE_PATH}/x86_64" ;;
-  *)             log "Warning: unknown arch '${ARCH}', skipping peppyalsa symlinks"; PEPPY_ALSA_PATH="";;
-esac
-
-if [[ -n "${PEPPY_ALSA_PATH}" ]]; then
-  SRC_LIB=""
-  if [[ -f "${PEPPY_ALSA_PATH}/libpeppyalsa.so.0.0.0" ]]; then
-    SRC_LIB="${PEPPY_ALSA_PATH}/libpeppyalsa.so.0.0.0"
-  elif [[ -f "${PEPPY_ALSA_PATH}/libpeppyalsa.so" ]]; then
-    SRC_LIB="${PEPPY_ALSA_PATH}/libpeppyalsa.so"
+  if [[ -f "$PEPPY_ALSA_PATH/libpeppyalsa.so.0.0.0" ]]; then
+    src="$PEPPY_ALSA_PATH/libpeppyalsa.so.0.0.0"
+  elif [[ -f "$PEPPY_ALSA_PATH/libpeppyalsa.so" ]]; then
+    src="$PEPPY_ALSA_PATH/libpeppyalsa.so"
   fi
 
-  if [[ -n "${SRC_LIB}" ]]; then
-    mkdir -p "${ALSA_BASE_PATH}"
-    ln -sfn "${SRC_LIB}" "${ALSA_BASE_PATH}/libpeppyalsa.so"
-    ln -sfn "${SRC_LIB}" "${ALSA_BASE_PATH}/libpeppyalsa.so.0"
-    log "Linked ${SRC_LIB} -> ${ALSA_BASE_PATH}/libpeppyalsa.so{,.0}"
+  if [[ -n "$src" ]]; then
+    mkdir -p "$ALSA_BASE_PATH"
+    ln -sfn "$src" "$ALSA_BASE_PATH/libpeppyalsa.so"
+    [[ -e "$src" ]] && ln -sfn "$src" "$ALSA_BASE_PATH/libpeppyalsa.so.0" || true
+    log "Linked $src -> $ALSA_BASE_PATH/libpeppyalsa.so{,.0}"
   else
-    log "Note: peppyalsa library not found for '${ARCH}' in '${PEPPY_ALSA_PATH}'."
+    log "No arch-specific peppyalsa library found for $(uname -m); continuing without."
   fi
-fi
+}
 
-# -----------------------------------------------------------------------------
-# 5) Ensure launcher is executable
-# -----------------------------------------------------------------------------
-sudo chmod +x "${spath}/startpeppymeterbasic.sh" || true
+# ---- Run steps ----
+ensure_peppymeter
+ensure_default_config
+setup_systemd
+link_alsa_libs
 
-# -----------------------------------------------------------------------------
-# 6) REQUIRED by Volumio installer
-# -----------------------------------------------------------------------------
-echo "plugininstallend"
+# Finish for Volumio plugin manager
+echo plugininstallend
