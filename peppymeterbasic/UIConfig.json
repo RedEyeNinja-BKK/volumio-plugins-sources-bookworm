@@ -1,228 +1,101 @@
 {
-  "page": { "label": "Configuration" },
-  "sections": [
+  "pages": [
     {
-      "id": "section_account",
-      "element": "section",
-      "label": "TRANSLATE.LOCALSETTINGS",
-      "icon": "fa-desktop",
-      "onSave": {
-        "type": "controller",
-        "endpoint": "user_interface/peppymeterbasic",
-        "method": "savepeppy"
-      },
-      "saveButton": {
-        "label": "TRANSLATE.APPLY",
-        "data": ["screensize"]
-      },
-      "content": [
+      "id": "peppymeterbasic",
+      "name": "PeppyMeter Basic",
+      "navigation": "single",
+      "icon": "fa-bar-chart",
+      "sections": [
         {
-          "id": "screensize",
-          "element": "select",
-          "doc": "TRANSLATE.SCREENSIZE_DOC",
-          "label": "TRANSLATE.SCREENSIZE",
-          "value": { "value": "480x320", "label": "480x320" },
-          "options": []
-        }
-      ]
-    },
-    {
-      "id": "section_meter",
-      "element": "section",
-      "label": "meter",
-      "icon": "fa-microchip",
-      "onSave": {
-        "type": "controller",
-        "endpoint": "user_interface/peppymeterbasic",
-        "method": "savepeppy1"
-      },
-      "saveButton": {
-        "label": "TRANSLATE.APPLY",
-        "data": ["meter"]
-      },
-      "content": [
-        {
-          "id": "meter",
-          "element": "select",
-          "doc": "TRANSLATE.CHOOSE_meter_DOC",
-          "label": "TRANSLATE.CHOOSE_meter",
-          "value": { "value": "", "label": "" },
-          "options": []
-        },
-        {
-          "id": "screenwidth",
-          "element": "input",
-          "type": "number",
-          "doc": "Screenwidth",
-          "label": "Screenwidth",
-          "value": { "value": "", "label": "" },
-          "attributes": [{ "maxlength": 3500 }, { "min": 0 }, { "step": 1 }],
-          "options": [],
-          "visibleIf": { "field": "autosize", "value": false }
-        },
-        {
-          "id": "screenheight",
-          "element": "input",
-          "type": "number",
-          "doc": "Screenheight",
-          "label": "Screenheight",
-          "value": { "value": "", "label": "" },
-          "attributes": [{ "maxlength": 3500 }, { "min": 0 }, { "step": 1 }],
-          "options": [],
-          "visibleIf": { "field": "autosize", "value": false }
-        },
-        {
-          "id": "autosize",
-          "element": "switch",
-          "doc": "auto screen size",
-          "label": "auto screen size",
-          "value": false
-        }
-      ]
-    },
-    {
-      "id": "section_log",
-      "element": "section",
-      "label": "Debug-log",
-      "icon": "fa-microchip",
-      "onSave": {
-        "type": "controller",
-        "endpoint": "user_interface/peppymeterbasic",
-        "method": "savepeppy2"
-      },
-      "saveButton": {
-        "label": "TRANSLATE.APPLY",
-        "data": ["debuglog"]
-      },
-      "content": [
-        {
-          "id": "debuglog",
-          "element": "switch",
-          "doc": "If enabled, debug log is written",
-          "label": "debuglog",
-          "value": true
-        }
-      ]
-    },
-    {
-      "id": "section_dl",
-      "element": "section",
-      "label": "Download meters packet",
-      "icon": "fa-microchip",
-      "onSave": {
-        "type": "controller",
-        "endpoint": "user_interface/peppymeterbasic",
-        "method": "dlmeter"
-      },
-      "saveButton": {
-        "label": "TRANSLATE.DOWNLOAD",
-        "data": ["zipfile"]
-      },
-      "content": [
-        {
-          "id": "zipfile",
-          "element": "select",
-          "doc": "Select a file",
-          "label": "Select a file",
-          "value": { "value": "", "label": "" },
-          "options": []
-        },
-        {
-          "id": "updatelist",
-          "element": "button",
-          "label": "TRANSLATE.CLICK_TO_UPDATE_LIST",
-          "description": "TRANSLATE.CLICK_TO_UPDATE_LIST_DESC",
-          "onClick": {
-            "type": "plugin",
-            "endpoint": "user_interface/peppymeterbasic",
-            "method": "updatelist",
-            "data": []
-          }
-        }
-      ]
-    },
-    {
-      "id": "section_delay",
-      "element": "section",
-      "label": "Delay before Meter starts",
-      "icon": "fa-clock-o",
-      "onSave": {
-        "type": "controller",
-        "endpoint": "user_interface/peppymeterbasic",
-        "method": "delaymeter"
-      },
-      "saveButton": {
-        "label": "TRANSLATE.APPLY",
-        "data": ["delaymeter"]
-      },
-      "content": [
-        {
-          "id": "delaymeter",
-          "element": "input",
-          "type": "text",
-          "doc": "Set a delay in seconds",
-          "label": "Delay in seconds",
-          "value": { "value": "0", "label": "0" },
-          "options": []
-        }
-      ]
-    },
-
-    /* NEW – Backend section */
-    {
-      "id": "section_camilla",
-      "element": "section",
-      "label": "Advanced: Backend",
-      "icon": "fa-cogs",
-      "onSave": {
-        "type": "controller",
-        "endpoint": "user_interface/peppymeterbasic",
-        "method": "savebackend"
-      },
-      "saveButton": {
-        "label": "TRANSLATE.APPLY",
-        "data": ["backend","camillaFifoPath","camillaRate","camillaChannels","camillaFormat"]
-      },
-      "content": [
-        {
-          "id": "backend",
-          "element": "select",
-          "label": "Meter Backend",
-          "value": "loopback",
-          "options": [
-            { "label": "ALSA Loopback (default)", "value": "loopback" },
-            { "label": "Camilla FIFO / Monitor",  "value": "camilla_fifo" }
+          "id": "general",
+          "name": "General",
+          "content": [
+            {
+              "id": "autostart",
+              "type": "switch",
+              "label": "Autostart PeppyMeter",
+              "description": "Start PeppyMeter automatically when Volumio boots.",
+              "element": "switch",
+              "value": true
+            },
+            {
+              "id": "backend",
+              "type": "select",
+              "label": "Backend",
+              "description": "Choose how PeppyMeter receives audio.",
+              "element": "select",
+              "value": "loopback",
+              "options": [
+                { "value": "loopback", "label": "ALSA Loopback (default)" },
+                { "value": "camilla_fifo", "label": "Camilla FIFO / Monitor" }
+              ]
+            }
           ]
         },
         {
-          "id": "camillaFifoPath",
-          "element": "input",
-          "label": "FIFO path (Camilla mode)",
-          "value": "/tmp/basic_peppy_meter_fifo"
+          "id": "camilla",
+          "name": "Camilla FIFO / Monitor",
+          "content": [
+            {
+              "id": "fifoPath",
+              "type": "text",
+              "label": "FIFO Path",
+              "description": "Path of the FIFO Camilla writes for PeppyMeter.",
+              "element": "input",
+              "value": "/tmp/basic_peppy_meter_fifo"
+            },
+            {
+              "id": "fifoRate",
+              "type": "number",
+              "label": "Sample Rate",
+              "description": "Match CamillaDSP fixed rate.",
+              "element": "input",
+              "value": 176400,
+              "attributes": { "min": 32000, "max": 192000, "step": 1 }
+            },
+            {
+              "id": "fifoChannels",
+              "type": "number",
+              "label": "Channels",
+              "description": "Number of channels written to the FIFO.",
+              "element": "input",
+              "value": 2,
+              "attributes": { "min": 1, "max": 8, "step": 1 }
+            },
+            {
+              "id": "fifoFormat",
+              "type": "select",
+              "label": "Sample Format",
+              "description": "PCM sample format expected by PeppyMeter.",
+              "element": "select",
+              "value": "S16_LE",
+              "options": [
+                { "value": "S16_LE", "label": "S16_LE" },
+                { "value": "S24_LE", "label": "S24_LE" },
+                { "value": "S32_LE", "label": "S32_LE" }
+              ]
+            }
+          ],
+          "dependencies": [
+            {
+              "element": "peppymeterbasic.general.backend",
+              "value": "camilla_fifo",
+              "visibility": "show"
+            }
+          ]
         },
         {
-          "id": "camillaRate",
-          "element": "input",
-          "type": "number",
-          "label": "Samplerate (Hz, Camilla mode)",
-          "value": 176400
-        },
-        {
-          "id": "camillaChannels",
-          "element": "input",
-          "type": "number",
-          "label": "Channels (Camilla mode)",
-          "value": 2
-        },
-        {
-          "id": "camillaFormat",
-          "element": "select",
-          "label": "Format (Camilla mode)",
-          "value": "S16_LE",
-          "options": [
-            { "label": "S16_LE", "value": "S16_LE" },
-            { "label": "S24_LE", "value": "S24_LE" },
-            { "label": "S32_LE", "value": "S32_LE" }
+          "id": "advanced",
+          "name": "Advanced",
+          "content": [
+            {
+              "id": "templatesPath",
+              "type": "text",
+              "label": "Templates Folder",
+              "description": "Where PeppyMeter templates are stored.",
+              "element": "input",
+              "value": "/data/INTERNAL/PeppyMeterBasic/Templates"
+            }
           ]
         }
       ]
