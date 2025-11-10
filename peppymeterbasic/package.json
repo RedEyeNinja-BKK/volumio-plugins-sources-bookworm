@@ -1,26 +1,25 @@
 {
   "name": "peppymeterbasic",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Basic PeppyMeter for Volumio (Bookworm) with optional Camilla FIFO / Monitor backend",
   "main": "index.js",
   "author": "Balbuze, community contributors",
   "license": "GPL-3.0",
-  "volumio_info": {"plugin_type": "user_interface", "os": ["bookworm"],
+  "volumio_info": {
     "prettyName": "PeppyMeter Basic",
     "plugin_type": "user_interface",
     "icon": "fa-bar-chart",
     "os": ["bookworm"],
-    "changelog": "Add optional Camilla FIFO/Monitor backend; service least-privilege; Pi5 (arm64) support",
+    "changelog": "Bookworm-safe installer (PEP 668), anonymous shallow clone, arm64/amd64/armhf support, UIConfig: Camilla FIFO/Monitor options.",
     "details": "VU meter plugin with Loopback or Camilla FIFO backend. Default remains Loopback for compatibility.",
     "architectures": ["armhf", "arm64", "amd64"],
     "has_alsa_contribution": true
   },
   "dependencies": {
-    "child_process": "*",
     "fs-extra": "*",
     "kew": "*",
-    "socket.io-client": "2.3.0",
-    "v-conf": "*"
+    "v-conf": "*",
+    "socket.io-client": "2.3.0"
   },
   "engines": {
     "node": ">=20",
